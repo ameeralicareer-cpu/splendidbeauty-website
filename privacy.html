@@ -73,9 +73,12 @@ footer a:hover{color:var(--gold-l)}
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'});
+  try{if(localStorage.getItem('sb_cookie_consent')==='granted'){gtag('consent','update',{analytics_storage:'granted'});}}catch(e){}
   gtag('js', new Date());
   gtag('config', 'G-YFCL7YQ0L1');
 </script>
+<script src="/cookie-consent.js" defer></script>
 </head>
 <body>
 <header class="top"><div class="in">
@@ -97,6 +100,9 @@ footer a:hover{color:var(--gold-l)}
 <p>If you message us on WhatsApp or by email, we use your details only to answer your enquiry and to process any order you place with us.</p>
 <h2>Email updates</h2>
 <p>If you join our email list on the home page, we collect your email address only to send you news about new products and offers, and only if you tick the box to agree. We receive your email address by email through our form provider, Web3Forms. You can unsubscribe at any time by emailing sales@splendidbeauty.co.uk, and we will remove you.</p>
+<h2>Cookies and analytics</h2>
+<p>We use Google Analytics to understand how visitors use this website (for example which pages are viewed). Analytics cookies are only set if you click Accept on our cookie banner. If you click Decline, no analytics cookies are used. You can change your choice at any time by clearing this site's data in your browser.</p>
+
 <h2>Sharing</h2>
 <p>We do not share your details with anyone, except where needed to deliver your order, for example with our courier.</p>
 <h2>Contact</h2>
