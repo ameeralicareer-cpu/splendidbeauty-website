@@ -10,6 +10,11 @@
   if(g)load();
   document.addEventListener('click',function(ev){
     var a=ev.target.closest&&ev.target.closest('a[href*="wa.me"]');
-    if(a&&typeof fbq==='function')fbq('track','Contact',{content_name:document.title});
+    if(!a)return;
+    var code='',m=decodeURIComponent(a.getAttribute('href')||'').match(/SB-[A-Z]{2}-\d{3}/);
+    if(m)code=m[0];
+    var where=a.getAttribute('aria-label')==='WhatsApp'?'floating_button':'page_link';
+    if(typeof fbq==='function')fbq('track','Contact',{content_name:document.title,content_ids:code?[code]:undefined,source:where});
+    if(typeof gtag==='function')gtag('event','whatsapp_click',{page_path:location.pathname,product_code:code||'none',link_location:where,transport_type:'beacon'});
   },true);
 })();
