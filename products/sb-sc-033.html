@@ -3,16 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Noir Gold Royal Engraved Hair Cutting Scissors (SB-SC-033) | Splendid Beauty</title>
-<meta name="description" content="Noir Gold Royal Engraved professional hair cutting scissors, 6 to 7 inch, available in stainless steel, Japanese J2 or Japanese 440C steel, leather pouch included. Premium beauty instruments manufacturing with precision &amp; excellence. UK stock available. Enquire on WhatsApp.">
+<title>Noir Gold Royal Engraved Hair Cutting Scissors (SB-SC-033) | Barber Scissors UK | Splendid Beauty</title>
+<meta name="description" content="Noir Gold Royal Engraved professional hair cutting scissors, 6 to 7 inch, available in stainless steel, Japanese J2 or Japanese 440C steel, leather pouch included. Free UK delivery from UK stock. Enquire on WhatsApp.">
 <link rel="canonical" href="https://splendidbeauty.co.uk/products/sb-sc-033">
 <meta property="og:type" content="product">
 <meta property="og:site_name" content="Splendid Beauty">
-<meta property="og:title" content="Noir Gold Royal Engraved Hair Cutting Scissors (SB-SC-033) | Splendid Beauty">
-<meta property="og:description" content="Noir Gold Royal Engraved professional hair cutting scissors, 6 to 7 inch, available in stainless steel, Japanese J2 or Japanese 440C steel, leather pouch included. Premium beauty instruments manufacturing with precision &amp; excellence. UK stock available. Enquire on WhatsApp.">
+<meta property="og:title" content="Noir Gold Royal Engraved Hair Cutting Scissors (SB-SC-033) | Barber Scissors UK | Splendid Beauty">
+<meta property="og:description" content="Noir Gold Royal Engraved professional hair cutting scissors, 6 to 7 inch, available in stainless steel, Japanese J2 or Japanese 440C steel, leather pouch included. Free UK delivery from UK stock. Enquire on WhatsApp.">
 <meta property="og:url" content="https://splendidbeauty.co.uk/products/sb-sc-033">
 <meta property="og:image" content="https://splendidbeauty.co.uk/images/products/SB-SC-033-1.jpg">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preload" as="image" href="/images/products/SB-SC-033-1.jpg" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root{--black:#101010;--gold:#B68D3C;--gold-l:#D9B66C;--gold-d:#A5783D;--cream:#F7F4EE;--line:#e4dccb;--ink:#1a1a1a;--mute:#6b6458}
@@ -94,12 +95,12 @@ footer a:hover{color:var(--gold-l)}
 <div class="crumbs"><a href="../">Home</a> / <a href="/barber-scissors">Barber Scissors</a> / SB-SC-033</div>
 <main class="wrap">
   <section aria-label="Product photos">
-    <div class="main-img"><img id="mainImg" src="../images/products/SB-SC-033-1.jpg" alt="Noir Gold Royal Engraved hair cutting scissors, SB-SC-033" width="1200" height="1200"></div>
+    <div class="main-img"><img id="mainImg" fetchpriority="high" src="../images/products/SB-SC-033-1.jpg" alt="Noir Gold Royal Engraved hair cutting scissors, SB-SC-033" width="1200" height="1200"></div>
     <div class="thumbs" id="thumbs">
-      <button type="button" aria-current="true" aria-label="Photo 1"><img src="../images/products/SB-SC-033-1.jpg" alt="" loading="lazy"></button>
-      <button type="button" aria-label="Photo 2"><img src="../images/products/SB-SC-033-2.jpg" alt="" loading="lazy"></button>
-      <button type="button" aria-label="Photo 3"><img src="../images/products/SB-SC-033-3.jpg" alt="" loading="lazy"></button>
-      <button type="button" aria-label="Photo 4"><img src="../images/products/SB-SC-033-4.jpg" alt="" loading="lazy"></button>
+      <button type="button" aria-current="true" aria-label="Photo 1"><img src="../images/products/SB-SC-033-1-t.webp" data-full="../images/products/SB-SC-033-1.jpg" alt="" loading="lazy" width="240" height="240"></button>
+      <button type="button" aria-label="Photo 2"><img src="../images/products/SB-SC-033-2-t.webp" data-full="../images/products/SB-SC-033-2.jpg" alt="" loading="lazy" width="240" height="240"></button>
+      <button type="button" aria-label="Photo 3"><img src="../images/products/SB-SC-033-3-t.webp" data-full="../images/products/SB-SC-033-3.jpg" alt="" loading="lazy" width="240" height="240"></button>
+      <button type="button" aria-label="Photo 4"><img src="../images/products/SB-SC-033-4-t.webp" data-full="../images/products/SB-SC-033-4.jpg" alt="" loading="lazy" width="240" height="240"></button>
     </div>
   </section>
   <section aria-label="Product details">
@@ -143,7 +144,7 @@ footer a:hover{color:var(--gold-l)}
 (function(){
   var main=document.getElementById('mainImg'),btns=document.querySelectorAll('#thumbs button');
   btns.forEach(function(b){b.addEventListener('click',function(){
-    main.src=b.querySelector('img').src;
+    main.src=b.querySelector('img').getAttribute('data-full')||b.querySelector('img').src;
     btns.forEach(function(x){x.removeAttribute('aria-current')});
     b.setAttribute('aria-current','true');
   })});
