@@ -28,11 +28,12 @@
     + '.pb select{width:100%;padding:10px;font-size:15px;border:1px solid #cfc5b0;border-radius:6px;background:#fff}'
     + '.pb .tot{display:flex;justify-content:space-between;font-weight:700;margin:14px 0 12px;font-size:16px}'
     + '.pb .msg{font-size:13px;margin-top:10px;color:#6b6458}.pb .err{color:#b3261e}'
-    + '.pb a{text-decoration:underline}';
+    + '.pb a{text-decoration:underline}'
+    + '.pbadd{width:100%;padding:14px;border:0;border-radius:6px;background:#101010;color:#D9B66C;font:600 14px Montserrat,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;margin-bottom:8px}.pb .or{font-size:12px;color:#6b6458;text-align:center;margin:8px 0}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
   var box = document.createElement('div'); box.className = 'pb';
-  var h = '<h2>Pay securely online</h2>';
+  var h = '<h2>Order online</h2>';
   if (options.length > 1) {
     h += '<label for="pbSteel">Steel</label><select id="pbSteel">';
     options.forEach(function (o, i) { h += '<option value="' + i + '">' + o.label + ' - &pound;' + o.price.toFixed(2) + '</option>'; });
@@ -41,6 +42,7 @@
   h += '<label for="pbQty">Quantity</label><select id="pbQty">';
   for (var n = 1; n <= 10; n++) h += '<option value="' + n + '">' + n + '</option>';
   h += '</select><div class="tot"><span>Total (free UK delivery)</span><span id="pbTot"></span></div>'
+    + '<button type="button" id="pbAdd" class="pbadd">Add to cart</button><p class="or">or buy this item now:</p>'
     + '<div id="pbBtns"></div><p class="msg" id="pbMsg">Pay with PayPal or a debit/credit card. Ordering more than 10 or want your own branding? <a href="https://wa.me/447946633362" target="_blank" rel="noopener">Message us on WhatsApp</a>.</p>';
   box.innerHTML = h;
   cta.parentNode.insertBefore(box, cta);
@@ -54,6 +56,15 @@
   if (selSteel) selSteel.addEventListener('change', upd);
   selQty.addEventListener('change', upd);
   upd();
+
+  var addBtn = document.getElementById('pbAdd');
+  if (!window.SBCart) { addBtn.style.display = 'none'; }
+  addBtn.addEventListener('click', function () {
+    var c = cur(), img = document.getElementById('mainImg'), src = '';
+    try { if (img) src = new URL(img.getAttribute('src'), location.href).pathname.replace(/\.jpg$/i, '-t.webp'); } catch (e) {}
+    SBCart.add({ code: code, name: [series, title].filter(Boolean).join(' ') || baseName, label: c.o.label, price: c.o.price, qty: c.qty, url: location.pathname, img: src });
+    msg.className = 'msg'; msg.innerHTML = 'Added to your cart. <a href="/cart">View cart</a> or keep shopping.';
+  });
 
   var s = document.createElement('script');
   s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(CLIENT_ID)
