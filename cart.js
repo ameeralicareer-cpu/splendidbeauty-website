@@ -53,7 +53,7 @@
   function verify() { /* re-read current prices from product pages so stored prices cannot go stale */
     var a = read(), jobs = a.map(function (it) {
       return fetch(it.url, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (h) {
-        if (!h) return; var p = parsePrices(h);
+        if (!h) return; if (h.indexOf('name="sb-stock" content="out"') > -1) { it.gone = true; return; } var p = parsePrices(h);
         if (p[it.label] > 0) it.price = p[it.label]; else it.gone = true;
       }).catch(function () {});
     });
