@@ -130,6 +130,36 @@ footer a:hover{color:var(--gold-l)}
       <a class="btn" href="https://wa.me/447946633362?text=Hi%20Splendid%20Beauty%2C%20when%20will%20SB-RZ-013%20Splatter%20be%20back%20in%20stock%3F" target="_blank" rel="noopener">Ask about restock on WhatsApp</a>
       <p class="note">This item is out of stock at the moment. Message us on WhatsApp +44 7946 633362 and we will tell you when it is back.</p>
     </div>
+    <form id="rsForm" class="restock" novalidate style="margin:18px 0 0;padding:16px;border:1px solid rgba(128,128,128,.35);border-radius:10px;max-width:460px">
+      <div style="font-weight:600;margin:0 0 4px">Email me when it is back in stock</div>
+      <p style="margin:0 0 12px;font-size:13.5px;opacity:.8">Leave your email and we will message you once when this item is available again.</p>
+      <input type="hidden" name="access_key" value="687fe778-c14e-4134-9a32-fc64ced4c24c">
+      <input type="hidden" name="subject" value="Back in stock request - SB-RZ-013 Splatter">
+      <input type="hidden" name="from_name" value="Splendid Beauty Website">
+      <input type="hidden" name="product" value="SB-RZ-013 Splatter">
+      <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none">
+      <label for="rsEmail" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Email address</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="rsEmail" name="email" type="email" required autocomplete="email" placeholder="Your email address" style="flex:1 1 220px;min-width:0;padding:11px 12px;border:1px solid rgba(128,128,128,.6);border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111">
+        <button id="rsBtn" type="submit" class="btn" style="cursor:pointer;border:0;font-family:inherit">Notify me</button>
+      </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0 0;font-size:12.5px;line-height:1.5;opacity:.85">
+        <input id="rsConsent" type="checkbox" style="margin-top:3px;flex:none">
+        <span>I agree that Splendid Beauty may email me once when this item is back in stock. See our <a href="/privacy" style="text-decoration:underline">Privacy Policy</a>.</span>
+      </label>
+      <p id="rsMsg" role="status" aria-live="polite" style="min-height:18px;margin:10px 0 0;font-size:13.5px"></p>
+    </form>
+    <script>
+    (function(){var f=document.getElementById('rsForm');if(!f)return;var m=document.getElementById('rsMsg'),b=document.getElementById('rsBtn');
+    f.addEventListener('submit',function(e){e.preventDefault();var em=document.getElementById('rsEmail');
+    if(!em.value||!em.checkValidity()){m.textContent='Please enter a valid email address.';return;}
+    if(!document.getElementById('rsConsent').checked){m.textContent='Please tick the box to agree.';return;}
+    b.disabled=true;m.textContent='Sending...';var d={};new FormData(f).forEach(function(v,k){d[k]=v;});
+    d.message='Please email this customer when SB-RZ-013 Splatter is back in stock. Customer ticked the consent box.';
+    fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(d)})
+    .then(function(r){return r.json();}).then(function(j){if(j.success){f.reset();m.textContent='Thank you. We will email you when it is back in stock.';}else{m.textContent='Something went wrong. Please message us on WhatsApp instead.';}})
+    .catch(function(){m.textContent='Something went wrong. Please message us on WhatsApp instead.';}).finally(function(){b.disabled=false;});});})();
+    </script>
     <div class="info">
       <div><b>UK delivery</b>Free with Evri, tracked, 4 to 5 working days</div>
       <div><b>Warranty</b>Yes, handled via WhatsApp</div>
