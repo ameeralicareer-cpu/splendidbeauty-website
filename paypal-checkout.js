@@ -68,7 +68,7 @@
 
   var s = document.createElement('script');
   s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(CLIENT_ID)
-    + '&currency=GBP&components=buttons&intent=capture&enable-funding=card&disable-funding=paylater,credit';
+    + '&currency=GBP&components=buttons,applepay,googlepay&intent=capture&enable-funding=card&disable-funding=paylater,credit';
   s.onerror = function () { msg.className = 'msg err'; msg.innerHTML = 'Online payment is not available right now. Please order on WhatsApp.'; };
   s.onload = function () {
     if (!window.paypal) return s.onerror();
@@ -98,6 +98,22 @@
       onCancel: function () { msg.className = 'msg'; msg.textContent = 'Payment cancelled. You can try again or order on WhatsApp.'; },
       onError: function () { msg.className = 'msg err'; msg.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; }
     }).render('#pbBtns');
+    try {
+      var w = document.createElement('script'); w.src = '/wallet-pay.js?v=1';
+      w.onload = function () {
+        if (!window.SBWallet) return;
+        SBWallet.mount(document.getElementById('pbBtns'),
+          function () { var c = cur(); return [{ code: code, name: baseName, label: c.o.label, price: c.o.price, qty: c.qty }]; },
+          function () { return cur().total; },
+          function (id, total) {
+            try { if (window.gtag) gtag('event', 'purchase', { transaction_id: id, value: total, currency: 'GBP' }); } catch (e) {}
+            try { if (window.fbq) fbq('track', 'Purchase', { value: total, currency: 'GBP' }); } catch (e) {}
+            window.location.href = '/thank-you?order=' + encodeURIComponent(id);
+          },
+          function () { msg.className = 'msg err'; msg.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; });
+      };
+      document.head.appendChild(w);
+    } catch (e) {}
   };
   document.head.appendChild(s);
 })();

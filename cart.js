@@ -107,12 +107,28 @@
         onCancel: function () { var m = document.getElementById('cartMsg'); if (m) m.textContent = 'Payment cancelled. Your cart is saved, you can try again.'; },
         onError: function () { var m = document.getElementById('cartMsg'); if (m) m.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; }
       }).render('#cartBtns');
+      try {
+        var w = document.createElement('script'); w.src = '/wallet-pay.js?v=1';
+        w.onload = function () {
+          if (!window.SBWallet) return;
+          SBWallet.mount(document.getElementById('cartBtns'),
+            function () { return read().map(function (i) { return { code: i.code, name: i.name, label: i.label, price: i.price, qty: i.qty }; }); },
+            function () { return total(); },
+            function (id, val) {
+              try { if (window.gtag) gtag('event', 'purchase', { transaction_id: id, value: val, currency: 'GBP' }); } catch (e) {}
+              try { if (window.fbq) fbq('track', 'Purchase', { value: val, currency: 'GBP' }); } catch (e) {}
+              location.href = '/thank-you?cart=1&order=' + encodeURIComponent(id);
+            },
+            function () { var m = document.getElementById('cartMsg'); if (m) m.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; });
+        };
+        document.head.appendChild(w);
+      } catch (e) {}
     }
     if (window.paypal) return draw();
     if (sdkState) return;
     sdkState = 1;
     var s = document.createElement('script');
-    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(CLIENT_ID) + '&currency=GBP&components=buttons&intent=capture&enable-funding=card&disable-funding=paylater,credit';
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(CLIENT_ID) + '&currency=GBP&components=buttons,applepay,googlepay&intent=capture&enable-funding=card&disable-funding=paylater,credit';
     s.onload = function () { sdkState = 2; if (window.paypal) draw(); };
     s.onerror = function () { if (msg) msg.textContent = 'Online payment is not available right now. Please order on WhatsApp.'; };
     document.head.appendChild(s);
