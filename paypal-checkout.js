@@ -41,7 +41,7 @@
   }
   h += '<label for="pbQty">Quantity</label><select id="pbQty">';
   for (var n = 1; n <= 10; n++) h += '<option value="' + n + '">' + n + '</option>';
-  h += '</select><div class="tot"><span>Total (free UK delivery)</span><span id="pbTot"></span></div>'
+  h += '</select>' + (window.SBCart ? '<div id="pbPromoLine" style="margin-top:12px;font-size:14px"></div>' : '') + '<div class="tot"><span>Total (free UK delivery)</span><span id="pbTot"></span></div>'
     + '<button type="button" id="pbAdd" class="pbadd">Add to cart</button><p class="or">or buy this item now:</p>'
     + '<div id="pbBtns"></div><p class="msg" id="pbMsg">Pay with PayPal or a debit/credit card. Ordering more than 10 or want your own branding? <a href="https://wa.me/447946633362" target="_blank" rel="noopener">Message us on WhatsApp</a>.</p>';
   box.innerHTML = h;
@@ -50,9 +50,25 @@
   var selSteel = document.getElementById('pbSteel'), selQty = document.getElementById('pbQty'), tot = document.getElementById('pbTot'), msg = document.getElementById('pbMsg');
   function cur() {
     var o = options[selSteel ? +selSteel.value : 0], qty = +selQty.value;
-    return { o: o, qty: qty, total: (Math.round(o.price * 100) * qty) / 100 };
+    var total = (Math.round(o.price * 100) * qty) / 100;
+    var pct = window.SBCart && SBCart.percent ? SBCart.percent() : 0, pc = pct ? SBCart.promo() : '';
+    var disc = pct ? Math.round(total * pct) / 100 : 0;
+    return { o: o, qty: qty, total: total, disc: disc, pay: Math.round((total - disc) * 100) / 100, promo: pc };
   }
-  function upd() { tot.innerHTML = '&pound;' + cur().total.toFixed(2); }
+  function upd() {
+    var c = cur();
+    tot.innerHTML = '&pound;' + c.pay.toFixed(2);
+    var pl = document.getElementById('pbPromoLine');
+    if (!pl) return;
+    if (c.promo) pl.innerHTML = 'Code <b>' + c.promo + '</b> applied (' + SBCart.percent() + '% off, saves &pound;' + c.disc.toFixed(2) + '). <a href="#" id="pbPromoRm">Remove</a>';
+    else pl.innerHTML = '<input id="pbPromoIn" type="text" placeholder="Promo code" aria-label="Promo code" autocomplete="off" autocapitalize="characters" style="padding:8px;font-size:14px;width:140px;text-transform:uppercase"> <button type="button" id="pbPromoBtn" style="padding:8px 12px;font-size:14px;cursor:pointer">Apply</button> <span id="pbPromoErr" class="err"></span>';
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'pbPromoBtn') {
+      if (SBCart.apply(document.getElementById('pbPromoIn').value)) upd(); else document.getElementById('pbPromoErr').textContent = 'That code is not valid.';
+    }
+    if (e.target && e.target.id === 'pbPromoRm') { e.preventDefault(); SBCart.clearPromo(); upd(); }
+  });
   if (selSteel) selSteel.addEventListener('change', upd);
   selQty.addEventListener('change', upd);
   upd();
@@ -75,13 +91,15 @@
     paypal.Buttons({
       style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 45 },
       createOrder: function (data, actions) {
-        var c = cur(), t = c.total.toFixed(2), unit = c.o.price.toFixed(2);
+        var c = cur(), t = c.total.toFixed(2), unit = c.o.price.toFixed(2), pay = c.pay.toFixed(2);
+        var bd = { item_total: { currency_code: 'GBP', value: t } };
+        if (c.promo) bd.discount = { currency_code: 'GBP', value: c.disc.toFixed(2) };
         var name = (baseName + (options.length > 1 ? ' (' + c.o.label + ')' : '')).slice(0, 127);
         return actions.order.create({
           purchase_units: [{
-            description: 'Splendid Beauty order ' + code,
-            custom_id: code,
-            amount: { currency_code: 'GBP', value: t, breakdown: { item_total: { currency_code: 'GBP', value: t } } },
+            description: 'Splendid Beauty order ' + code + (c.promo ? ' (code ' + c.promo + ')' : ''),
+            custom_id: c.promo || code,
+            amount: { currency_code: 'GBP', value: pay, breakdown: bd },
             items: [{ name: name, sku: code, quantity: String(c.qty), unit_amount: { currency_code: 'GBP', value: unit }, category: 'PHYSICAL_GOODS' }]
           }],
           application_context: { brand_name: 'Splendid Beauty', shipping_preference: 'GET_FROM_FILE', user_action: 'PAY_NOW' }
@@ -90,8 +108,8 @@
       onApprove: function (data, actions) {
         var c = cur();
         return actions.order.capture().then(function (d) {
-          try { if (window.gtag) gtag('event', 'purchase', { transaction_id: d.id, value: c.total, currency: 'GBP', items: [{ item_id: code, item_name: baseName, quantity: c.qty, price: c.o.price }] }); } catch (e) {}
-          try { if (window.fbq) fbq('track', 'Purchase', { value: c.total, currency: 'GBP' }); } catch (e) {}
+          try { if (window.gtag) gtag('event', 'purchase', { transaction_id: d.id, value: c.pay, currency: 'GBP', coupon: c.promo || undefined, items: [{ item_id: code, item_name: baseName, quantity: c.qty, price: c.o.price }] }); } catch (e) {}
+          try { if (window.fbq) fbq('track', 'Purchase', { value: c.pay, currency: 'GBP' }); } catch (e) {}
           window.location.href = '/thank-you?order=' + encodeURIComponent(d.id);
         });
       },
@@ -99,14 +117,14 @@
       onError: function () { msg.className = 'msg err'; msg.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; }
     }).render('#pbBtns');
     try {
-      var w = document.createElement('script'); w.src = '/wallet-pay.js?v=1';
+      var w = document.createElement('script'); w.src = '/wallet-pay.js?v=2';
       w.onload = function () {
         if (!window.SBWallet) return;
         SBWallet.mount(document.getElementById('pbBtns'),
           function () { var c = cur(); return [{ code: code, name: baseName, label: c.o.label, price: c.o.price, qty: c.qty }]; },
-          function () { return cur().total; },
+          function () { return cur().pay; },
           function (id, total) {
-            try { if (window.gtag) gtag('event', 'purchase', { transaction_id: id, value: total, currency: 'GBP' }); } catch (e) {}
+            try { if (window.gtag) gtag('event', 'purchase', { transaction_id: id, value: total, currency: 'GBP', coupon: (window.SBCart && SBCart.promo()) || undefined }); } catch (e) {}
             try { if (window.fbq) fbq('track', 'Purchase', { value: total, currency: 'GBP' }); } catch (e) {}
             window.location.href = '/thank-you?order=' + encodeURIComponent(id);
           },

@@ -15,6 +15,9 @@
   function payable() { return Math.round((total() - discount()) * 100) / 100; }
   var SBCart = window.SBCart = {
     get: read, count: count, total: total, money: money, promo: promo, discount: discount, payable: payable,
+    percent: function () { var c = promo(); return c ? PROMOS[c] : 0; },
+    apply: function (c) { c = String(c || '').trim().toUpperCase(); if (PROMOS[c]) { setPromo(c); return true; } return false; },
+    clearPromo: function () { setPromo(''); },
     add: function (it) {
       var a = read(), k = it.code + '|' + it.label, f = null;
       a.forEach(function (x) { if (x.key === k) f = x; });
@@ -163,5 +166,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCart); else initCart();
 
   /* thank-you page after a cart checkout empties the cart */
-  if (/^\/thank-you/.test(location.pathname) && /[?&]cart=1/.test(location.search)) { try { localStorage.removeItem(KEY); localStorage.removeItem(PKEY); } catch (e) {} }
+  if (/^\/thank-you/.test(location.pathname)) { try { if (/[?&]cart=1/.test(location.search)) localStorage.removeItem(KEY); localStorage.removeItem(PKEY); } catch (e) {} }
 })();
