@@ -131,7 +131,7 @@
         onError: function () { var m = document.getElementById('cartMsg'); if (m) m.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; }
       }).render('#cartBtns');
       try {
-        var w = document.createElement('script'); w.src = '/wallet-pay.js?v=2';
+        var w = document.createElement('script'); w.src = '/wallet-pay.js?v=3';
         w.onload = function () {
           if (!window.SBWallet) return;
           SBWallet.mount(document.getElementById('cartBtns'),

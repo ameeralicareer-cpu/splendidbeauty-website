@@ -20,7 +20,7 @@
      box: element to put the buttons in; getItems: returns [{code,name,label,price,qty}]; getTotal: number; onPaid(orderId, total) */
   /* Test switch: open any page with ?wallet=1 to turn the buttons on for this browser only, ?wallet=0 to turn off.
      Set LIVE to true when everything is tested to show them to every customer. */
-  var LIVE = false;
+  var LIVE = true;
   function enabled() {
     if (LIVE) return true;
     try {
@@ -29,7 +29,7 @@
       return localStorage.getItem('sb_wallet') === '1';
     } catch (e) { return false; }
   }
-  window.SBWallet = { mount: function (box, getItems, getTotal, onPaid, onError) {
+  function realMount(box, getItems, getTotal, onPaid, onError) {
     if (!box || !window.paypal || !enabled()) return;
     var wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:8px';
@@ -124,5 +124,11 @@
         }).catch(fail);
       }
     } catch (e) { fail(e); }
+  }
+  /* Show the wallet buttons only when the server can reach PayPal (keys set), so a customer never taps a button that fails. */
+  window.SBWallet = { mount: function () {
+    var args = arguments;
+    fetch('/api/wallet-ready', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (j) { if (j && j.ready) realMount.apply(null, args); }).catch(function () {});
   } };
 })();
