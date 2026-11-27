@@ -1,8 +1,9 @@
 import { API, token, json } from './_paypal.js';
 
-// PayPal webhook: when a payment is captured, send the shop owner a Telegram message.
-// Needs Cloudflare variables: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_WEBHOOK_ID (Live),
-// TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID. Without them this does nothing and never blocks a sale.
+// PayPal webhook: when a payment is captured, tell the shop owner by email (Resend) and/or Telegram.
+// Needs Cloudflare variables: PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_WEBHOOK_ID (Live), plus
+// email: RESEND_API_KEY and NOTIFY_EMAILS (comma separated, 1 to 3 addresses), optional NOTIFY_FROM
+// and/or Telegram: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID. Without them this does nothing and never blocks a sale.
 
 async function verified(request, raw, env, t) {
   const h = request.headers;
@@ -21,7 +22,10 @@ async function verified(request, raw, env, t) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    if (!env.PAYPAL_WEBHOOK_ID || !env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return json({ ok: true, skipped: 'not configured' });
+    const useTg = !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID);
+    const emails = String(env.NOTIFY_EMAILS || '').split(',').map(x => x.trim()).filter(Boolean).slice(0, 3);
+    const useMail = !!(env.RESEND_API_KEY && emails.length);
+    if (!env.PAYPAL_WEBHOOK_ID || (!useTg && !useMail)) return json({ ok: true, skipped: 'not configured' });
     const raw = await request.text();
     const t = await token(env);
     if (!(await verified(request, raw, env, t))) return json({ error: 'bad signature' }, 400);
@@ -45,10 +49,19 @@ export async function onRequestPost({ request, env }) {
       if (o.payer && o.payer.email_address) lines.push('Email: ' + o.payer.email_address);
       lines.push('PayPal order: ' + orderId);
     } else lines.push('PayPal capture: ' + cap.id);
-    await fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/sendMessage', {
+    const jobs = [];
+    if (useTg) jobs.push(fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/sendMessage', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: lines.join('\n') })
-    });
+    }));
+    if (useMail) jobs.push(fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + String(env.RESEND_API_KEY).trim(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.NOTIFY_FROM || 'Splendid Beauty Orders <orders@splendidbeauty.co.uk>',
+        to: emails, subject: lines[0], text: lines.join('\n')
+      })
+    }));
+    await Promise.allSettled(jobs);
     return json({ ok: true });
   } catch (e) {
     return json({ error: 'server error' }, 500);
