@@ -1,5 +1,8 @@
 import { API, token, json } from './_paypal.js';
 
+// Ambassador promo codes: code -> percent off. Keep in step with cart.js.
+const PROMOS = { GAVIN15: 15 };
+
 // Creates a PayPal order. Prices are checked against the real product pages, never trusted from the browser.
 export async function onRequestPost({ request, env }) {
   try {
@@ -29,14 +32,18 @@ export async function onRequestPost({ request, env }) {
       cents += pc * qty;
       items.push({ name: String((it.name || code) + ' (' + (it.label || '') + ')').slice(0, 127), sku: code, quantity: String(qty), unit_amount: { currency_code: 'GBP', value: (pc / 100).toFixed(2) }, category: 'PHYSICAL_GOODS' });
     }
-    const total = (cents / 100).toFixed(2);
+    const promo = String(body.promo || '').toUpperCase();
+    const pct = PROMOS[promo] || 0;
+    const itemTotal = (cents / 100).toFixed(2);
+    const disc = pct ? Math.round(cents * pct / 100) : 0;
+    const total = ((cents - disc) / 100).toFixed(2);
     const t = await token(env);
     const r = await fetch(API + '/v2/checkout/orders', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         intent: 'CAPTURE',
-        purchase_units: [{ description: 'Splendid Beauty order', amount: { currency_code: 'GBP', value: total, breakdown: { item_total: { currency_code: 'GBP', value: total } } }, items }]
+        purchase_units: [{ description: 'Splendid Beauty order' + (pct ? ' (code ' + promo + ')' : ''), custom_id: pct ? promo : undefined, amount: { currency_code: 'GBP', value: total, breakdown: Object.assign({ item_total: { currency_code: 'GBP', value: itemTotal } }, disc ? { discount: { currency_code: 'GBP', value: (disc / 100).toFixed(2) } } : {}) }, items }]
       })
     });
     const j = await r.json();

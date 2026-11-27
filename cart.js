@@ -7,8 +7,14 @@
   function money(n) { return '£' + (Math.round(n * 100) / 100).toFixed(2); }
   function count() { return read().reduce(function (s, i) { return s + i.qty; }, 0); }
   function total() { return read().reduce(function (s, i) { return s + Math.round(i.price * 100) * i.qty; }, 0) / 100; }
+  /* Ambassador promo codes: code -> percent off. Keep in step with functions/api/create-order.js */
+  var PROMOS = { GAVIN15: 15 }, PKEY = 'sb_promo_v1';
+  function promo() { try { var c = String(localStorage.getItem(PKEY) || '').toUpperCase(); return PROMOS[c] ? c : ''; } catch (e) { return ''; } }
+  function setPromo(c) { try { if (c) localStorage.setItem(PKEY, c); else localStorage.removeItem(PKEY); } catch (e) {} }
+  function discount() { var c = promo(); return c ? Math.round(total() * PROMOS[c]) / 100 : 0; }
+  function payable() { return Math.round((total() - discount()) * 100) / 100; }
   var SBCart = window.SBCart = {
-    get: read, count: count, total: total, money: money,
+    get: read, count: count, total: total, money: money, promo: promo, discount: discount, payable: payable,
     add: function (it) {
       var a = read(), k = it.code + '|' + it.label, f = null;
       a.forEach(function (x) { if (x.key === k) f = x; });
@@ -69,10 +75,22 @@
         + '<div class="ci"><a href="' + esc(it.url) + '"><b>' + esc(it.name) + '</b></a><div class="cs">' + esc(it.label) + ' &middot; ' + money(it.price) + ' each</div>'
         + '<div class="cq"><select aria-label="Quantity">' + opts + '</select> <a href="#" class="rm">Remove</a></div></div><div class="lt">' + money(it.price * it.qty) + '</div></div>';
     });
-    h += '</div><div class="ctot"><span>Total (free UK delivery)</span><b>' + money(total()) + '</b></div><div id="cartBtns"></div>'
+    var pc = promo();
+    h += '</div><div class="cpromo">' + (pc
+        ? '<span>Code <b>' + esc(pc) + '</b> applied (' + PROMOS[pc] + '% off)</span> <a href="#" id="promoRm">Remove</a>'
+        : '<input id="promoIn" type="text" placeholder="Promo code" aria-label="Promo code" autocomplete="off" autocapitalize="characters"> <button type="button" id="promoBtn">Apply</button>')
+      + '<div class="cmsg" id="promoMsg"></div></div>'
+      + (pc ? '<div class="ctot" style="margin-bottom:0"><span>Subtotal</span><span>' + money(total()) + '</span></div><div class="ctot" style="margin:6px 0 0"><span>Discount (' + esc(pc) + ')</span><span>-' + money(discount()) + '</span></div>' : '')
+      + '<div class="ctot"><span>Total (free UK delivery)</span><b>' + money(payable()) + '</b></div><div id="cartBtns"></div>'
       + '<p class="cmsg" id="cartMsg">Pay with PayPal or a debit/credit card. Need more than 10 of an item or your own branding? <a href="https://wa.me/447946633362" target="_blank" rel="noopener">Message us on WhatsApp</a>.</p>'
       + '<p><a href="/barber-scissors">&larr; Continue shopping</a></p>';
     root.innerHTML = h;
+    var pb = document.getElementById('promoBtn'), pr = document.getElementById('promoRm');
+    if (pb) pb.addEventListener('click', function () {
+      var c = String(document.getElementById('promoIn').value || '').trim().toUpperCase();
+      if (PROMOS[c]) { setPromo(c); render(); mountPay(); } else document.getElementById('promoMsg').textContent = 'That code is not valid.';
+    });
+    if (pr) pr.addEventListener('click', function (e) { e.preventDefault(); setPromo(''); render(); mountPay(); });
     root.querySelectorAll('.crow').forEach(function (row) {
       var k = row.getAttribute('data-k');
       row.querySelector('select').addEventListener('change', function (e) { SBCart.setQty(k, +e.target.value); render(); mountPay(); });
@@ -89,17 +107,19 @@
         style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 45 },
         createOrder: function (d, actions) {
           var a = read(); if (!a.length) throw new Error('empty');
-          var t = total().toFixed(2);
+          var t = total().toFixed(2), dsc = discount().toFixed(2), pay = payable().toFixed(2), pcode = promo();
+          var bd = { item_total: { currency_code: 'GBP', value: t } };
+          if (pcode) bd.discount = { currency_code: 'GBP', value: dsc };
           return actions.order.create({
-            purchase_units: [{ description: 'Splendid Beauty order', amount: { currency_code: 'GBP', value: t, breakdown: { item_total: { currency_code: 'GBP', value: t } } },
+            purchase_units: [{ description: 'Splendid Beauty order' + (pcode ? ' (code ' + pcode + ')' : ''), custom_id: pcode || undefined, amount: { currency_code: 'GBP', value: pay, breakdown: bd },
               items: a.map(function (i) { return { name: (i.name + ' (' + i.label + ')').slice(0, 127), sku: i.code, quantity: String(i.qty), unit_amount: { currency_code: 'GBP', value: i.price.toFixed(2) }, category: 'PHYSICAL_GOODS' }; }) }],
             application_context: { brand_name: 'Splendid Beauty', shipping_preference: 'GET_FROM_FILE', user_action: 'PAY_NOW' }
           });
         },
         onApprove: function (d, actions) {
-          var val = total();
+          var val = payable(), pcode = promo();
           return actions.order.capture().then(function (o) {
-            try { if (window.gtag) gtag('event', 'purchase', { transaction_id: o.id, value: val, currency: 'GBP' }); } catch (e) {}
+            try { if (window.gtag) gtag('event', 'purchase', { transaction_id: o.id, value: val, currency: 'GBP', coupon: pcode || undefined }); } catch (e) {}
             try { if (window.fbq) fbq('track', 'Purchase', { value: val, currency: 'GBP' }); } catch (e) {}
             location.href = '/thank-you?cart=1&order=' + encodeURIComponent(o.id);
           });
@@ -108,14 +128,14 @@
         onError: function () { var m = document.getElementById('cartMsg'); if (m) m.innerHTML = 'Payment could not be completed. Please try again or <a href="https://wa.me/447946633362" target="_blank" rel="noopener">order on WhatsApp</a>.'; }
       }).render('#cartBtns');
       try {
-        var w = document.createElement('script'); w.src = '/wallet-pay.js?v=1';
+        var w = document.createElement('script'); w.src = '/wallet-pay.js?v=2';
         w.onload = function () {
           if (!window.SBWallet) return;
           SBWallet.mount(document.getElementById('cartBtns'),
             function () { return read().map(function (i) { return { code: i.code, name: i.name, label: i.label, price: i.price, qty: i.qty }; }); },
-            function () { return total(); },
+            function () { return payable(); },
             function (id, val) {
-              try { if (window.gtag) gtag('event', 'purchase', { transaction_id: id, value: val, currency: 'GBP' }); } catch (e) {}
+              try { if (window.gtag) gtag('event', 'purchase', { transaction_id: id, value: val, currency: 'GBP', coupon: promo() || undefined }); } catch (e) {}
               try { if (window.fbq) fbq('track', 'Purchase', { value: val, currency: 'GBP' }); } catch (e) {}
               location.href = '/thank-you?cart=1&order=' + encodeURIComponent(id);
             },
@@ -136,12 +156,12 @@
   function initCart() {
     root = document.getElementById('cartRoot'); if (!root) return;
     var st = document.createElement('style');
-    st.textContent = '.crow{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid #e4dccb}.crow img{border-radius:8px;object-fit:cover;background:#fff}.ci{flex:1;min-width:0}.cs{font-size:13px;color:#6b6458;margin:2px 0 6px}.cq select{padding:6px;font-size:14px}.rm{font-size:13px;margin-left:10px;text-decoration:underline}.lt{font-weight:700}.ctot{display:flex;justify-content:space-between;font-size:18px;margin:18px 0 12px}.cmsg{font-size:13px;color:#6b6458;margin:12px 0}';
+    st.textContent = '.crow{display:flex;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid #e4dccb}.crow img{border-radius:8px;object-fit:cover;background:#fff}.ci{flex:1;min-width:0}.cs{font-size:13px;color:#6b6458;margin:2px 0 6px}.cq select{padding:6px;font-size:14px}.rm{font-size:13px;margin-left:10px;text-decoration:underline}.lt{font-weight:700}.ctot{display:flex;justify-content:space-between;font-size:18px;margin:18px 0 12px}.cmsg{font-size:13px;color:#6b6458;margin:12px 0}.cpromo{margin:14px 0 4px;font-size:14px}.cpromo input{padding:8px;font-size:14px;width:150px;text-transform:uppercase}.cpromo button{padding:8px 14px;font-size:14px;cursor:pointer}.cpromo a{text-decoration:underline;margin-left:8px;font-size:13px}';
     document.head.appendChild(st);
     verify().then(function () { render(); mountPay(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCart); else initCart();
 
   /* thank-you page after a cart checkout empties the cart */
-  if (/^\/thank-you/.test(location.pathname) && /[?&]cart=1/.test(location.search)) { try { localStorage.removeItem(KEY); } catch (e) {} }
+  if (/^\/thank-you/.test(location.pathname) && /[?&]cart=1/.test(location.search)) { try { localStorage.removeItem(KEY); localStorage.removeItem(PKEY); } catch (e) {} }
 })();

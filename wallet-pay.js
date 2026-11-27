@@ -12,7 +12,7 @@
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'failed'); return j; }); });
   }
   function createOrder(getItems) {
-    return post('/api/create-order', { items: getItems() }).then(function (j) { return j; });
+    return post('/api/create-order', { items: getItems(), promo: (window.SBCart && SBCart.promo && SBCart.promo()) || '' }).then(function (j) { return j; });
   }
   function capture(id, shipping) { return post('/api/capture-order', { id: id, shipping: shipping }); }
 
