@@ -36,13 +36,15 @@
     box.appendChild(wrap);
     function fail(e) { try { console.warn('wallet pay', e); } catch (x) {} if (onError) onError(); }
 
-    /* Apple Pay (Safari on iPhone, iPad, Mac) */
+    /* Apple Pay: Safari on iPhone, iPad, Mac; other browsers (Chrome, Edge, Firefox) show a code to scan with an iPhone (iOS 18+) */
     try {
-      if (window.paypal.Applepay && window.ApplePaySession && ApplePaySession.canMakePayments()) {
-        var ap = paypal.Applepay();
-        ap.config().then(function (cfg) {
+      if (window.paypal.Applepay) {
+        loadScript('https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js').catch(function () {}).then(function () {
+          if (!(window.ApplePaySession && ApplePaySession.canMakePayments())) return;
+          var ap = paypal.Applepay();
+          return ap.config().then(function (cfg) {
           if (!cfg || !cfg.isEligible) return;
-          return loadScript('https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js').then(function () {
+          return Promise.resolve().then(function () {
             var b = document.createElement('apple-pay-button');
             b.setAttribute('buttonstyle', 'black'); b.setAttribute('type', 'buy'); b.setAttribute('locale', 'en-GB');
             b.style.cssText = '--apple-pay-button-width:100%;--apple-pay-button-height:45px;--apple-pay-button-border-radius:4px;display:block;cursor:pointer';
@@ -84,6 +86,7 @@
             });
           });
         }).catch(fail);
+        });
       }
     } catch (e) { fail(e); }
 
