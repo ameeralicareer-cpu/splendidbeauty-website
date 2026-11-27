@@ -3,10 +3,12 @@
 export const API = 'https://api-m.paypal.com';
 
 export async function token(env) {
-  if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) throw new Error('PayPal keys are not set');
+  // trim: a stray space or new line pasted with a key must not break the login
+  const id = String(env.PAYPAL_CLIENT_ID || '').trim(), secret = String(env.PAYPAL_CLIENT_SECRET || '').trim();
+  if (!id || !secret) throw new Error('PayPal keys are not set');
   const r = await fetch(API + '/v1/oauth2/token', {
     method: 'POST',
-    headers: { Authorization: 'Basic ' + btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_CLIENT_SECRET), 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { Authorization: 'Basic ' + btoa(id + ':' + secret), 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'grant_type=client_credentials'
   });
   const j = await r.json();
