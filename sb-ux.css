@@ -1,0 +1,66 @@
+/* Splendid Beauty: shared UX polish (buttons, tap areas, hover, focus).
+   Loaded last on every page via <link rel="stylesheet" href="/sb-ux.css?v=1">.
+   Bump the ?v= number in every html file after editing this file. */
+
+/* 7. Fitts' law: big, clear primary buttons with quick feedback */
+.btn, .pbadd, #nl-btn {
+  min-height: 48px;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease, border-color .2s ease, filter .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover, .pbadd:hover, #nl-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(182, 141, 60, .28);
+}
+.pbadd:hover { filter: brightness(1.12); }
+.btn:active, .pbadd:active, #nl-btn:active {
+  transform: translateY(0) scale(.98);
+  box-shadow: none;
+}
+.pbadd { min-height: 52px; border-radius: 999px !important; }
+
+/* Keyboard focus ring (gold) */
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 2px solid #D9B66C;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* 8. Bigger hit areas, especially for phones */
+.top nav a, .site-nav a { padding: 12px 6px; }
+.crumbs a { display: inline-block; padding: 10px 2px; }
+footer .in a { display: inline-block; padding: 8px 2px; }
+.thumbs button { min-width: 44px; min-height: 44px; transition: border-color .2s ease, transform .2s ease; }
+.thumbs button:hover { transform: translateY(-2px); }
+.pb select, .cq select { min-height: 46px; }
+.cq .rm { display: inline-block; padding: 12px 8px; }
+.chip { padding-left: 18px; padding-right: 18px; }
+.prod-grid a[href^="https://wa.me"], .card .en { min-height: 44px; display: flex; align-items: center; justify-content: center; }
+.prod-grid a[href^="https://wa.me"] { padding: 12px 14px !important; transition: background-color .2s ease, border-color .2s ease; }
+.prod-grid a[href^="https://wa.me"]:hover { background: rgba(233, 201, 136, .12); border-color: rgba(233, 201, 136, .75) !important; }
+
+/* 10 (soft version): product cards lift and image zooms gently on hover */
+.card, .prod-grid > div, .cat-grid > a, .cat-grid > div {
+  transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+}
+.card:hover { box-shadow: 0 14px 30px rgba(16, 16, 16, .12); }
+.prod-grid > div:hover { transform: translateY(-4px); box-shadow: 0 16px 34px rgba(0, 0, 0, .45); border-color: rgba(233, 201, 136, .35) !important; }
+.card .ph, .prod-grid > div > a > div, .cat-grid > a > div:first-child { overflow: hidden; }
+.card .ph img, .prod-grid > div > a img, .cat-card-img img {
+  transition: transform .6s cubic-bezier(.2, .7, .2, 1);
+}
+.card:hover .ph img, .prod-grid > div:hover > a img, .cat-grid > a:hover .cat-card-img img { transform: scale(1.06); }
+.main-img { overflow: hidden; }
+.main-img img { transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
+@media (hover: hover) { .main-img:hover img { transform: scale(1.04); } }
+
+/* 6. Doherty threshold: images fade in softly instead of popping */
+img[loading="lazy"] { background-color: rgba(128, 128, 128, .08); }
+
+/* Respect people who turn animations off */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
+.chip { min-height: 44px; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
+#pbPromoLine input, #pbPromoLine button, .cpromo input, .cpromo button { min-height: 44px; font-size: 15px; }
+#pbPromoLine button, .cpromo button { padding-left: 16px; padding-right: 16px; cursor: pointer; }
